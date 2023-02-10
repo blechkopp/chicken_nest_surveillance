@@ -71,7 +71,7 @@ String sendPhotoTelegram() {
   camera_fb_t * fb = NULL;
   fb = esp_camera_fb_get();
 
-  if (!fb) {
+  if ( !fb ) {
     Serial.println("Camera capture failed");
     delay(1000);
     ESP.restart();
@@ -81,7 +81,7 @@ String sendPhotoTelegram() {
   Serial.println("Connect to " + String(myDomain));
 
   clientTCP.setInsecure();
-  if (clientTCP.connect(myDomain, 443)) {
+  if ( clientTCP.connect(myDomain, 443) ) {
     Serial.println("Connection successful");
 
     String head = "--RandomNerdTutorials\r\nContent-Disposition: form-data; name=\"chat_id\"; \r\n\r\n" + CHAT_ID +
@@ -103,10 +103,10 @@ String sendPhotoTelegram() {
     size_t fbLen = fb->len;
     
     for (size_t n = 0; n < fbLen; n = n + 1024) {
-      if (n + 1024 < fbLen) {
+      if ( n + 1024 < fbLen ) {
         clientTCP.write(fbBuf, 1024);
         fbBuf += 1024;
-      } else if (fbLen % 1024 > 0) {
+      } else if ( fbLen % 1024 > 0 ) {
         size_t remainder = fbLen % 1024;
         clientTCP.write(fbBuf, remainder);
       }
@@ -126,15 +126,15 @@ String sendPhotoTelegram() {
     
       while (clientTCP.available()) {
         char c = clientTCP.read();
-        if (c == '\n') {
+        if ( c == '\n' ) {
           if (getAll.length() == 0) state = true;
           getAll = "";
-        } else if (c != '\r')
+        } else if ( c != '\r' )
           getAll += String(c);
-          if (state == true) getBody += String(c);
+          if ( state == true ) getBody += String(c);
           startTimer = millis();
         }
-      if (getBody.length() > 0) break;
+      if ( getBody.length() > 0 ) break;
     }
   
     clientTCP.stop();
@@ -188,7 +188,7 @@ void setup() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
 
-  if(psramFound()) {
+  if( psramFound() ) {
     // FRAMESIZE_ +
     //QQVGA/160x120//QQVGA2/128x160//QCIF/176x144//HQVGA/240x176
     //QVGA/320x240//CIF/400x296//VGA/640x480//SVGA/800x600//XGA/1024x768
@@ -204,14 +204,14 @@ void setup() {
 
   // Init Camera
   esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) {
+  if ( err != ESP_OK ) {
     Serial.printf("Camera init failed with error 0x%x", err);
     return;
   }
 
   sensor_t * s = esp_camera_sensor_get();
 
-  if (s->id.PID == OV3660_PID) {
+  if ( s->id.PID == OV3660_PID ) {
     Serial.printf("esp_camera_sensor_get");
     s->set_vflip(s, 1); // flip it back
     s->set_brightness(s, 1); // up the brightness just a bit
@@ -231,23 +231,26 @@ void loop() {
   distance= duration*0.034/2;
   Serial.print("Distance: ");
   Serial.println(distance);
-
-  //something happened in front of sonix sensor - maybe
-  if( distance > minDistance and distance <= maxDistance ) {
+  
+  
+  if ( distance <= minDistance ) { //incorrect measurement
+    //do nothing
+  } else if( distance <= maxDistance ) { //something happened in front of sonic sensor - maybe
     detected++;
-  } else {
-    if ( detected > 0 ) detected--;
+  } else if ( detected > 0 ) { //nothing happened in front of sonic sensor - maybe
+    detected--;
   }
   
   Serial.print(detected);
 
   //if something is detected for 30 Seconds
-  if (detected>30) {
+  if ( detected>30 ) {
     Serial.println("chick is sitting");
     sittingChicken=1;
     detected=30;
+    
     //chicken is not photographed
-    if (photographedChicken==0) {
+    if ( photographedChicken == 0 ) {
       Serial.println("chicken say cheese!");
       Camera_capture();
       photographedChicken=1;
@@ -255,11 +258,15 @@ void loop() {
   }
 
   //if nothing is detected for 30 Seconds
-    if (detected == 0 && photographedChicken==1) {
+    if ( detected == 0 ) {
       Serial.println("chick is gone");
       sittingChicken=0;
-      photographedChicken=0;
+      
+      //reset capture status
+      if ( photographedChicken == 1 )
+        photographedChicken=0;
     }
+    
   //loop every second
   delay(1000);
 }
